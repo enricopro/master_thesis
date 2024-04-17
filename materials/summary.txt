@@ -1,0 +1,8 @@
+### Reward is enough ###
+- Hypothesis: Intelligence can be understood as serving the maximization of reward by an agent in its environment.
+- All abilities associated with intelligence subserve a singular goal of maximizing reward within the environment.
+- Pursuit of one goal can generate complex behaviors exhibiting multiple abilities associated with intelligence (g.e. socializing, speaking, ...)
+- Unified Cognitive Architectures: Aspire towards general intelligence by combining various solution methods for subproblems without a generic objective.
+- Sample-Efficient Reinforcement Learning: Challenges in complex environments may require assumptions or abstractions, but the focus should be on finding solutions.
+- AlphaZero Example: Demonstrates the success of maximizing a singular reward signal in achieving a deeper understanding of various abilities in the game of Go.
+- Pathway to Artificial General Intelligence: The conjecture that intelligence could emerge from powerful reinforcement learning agents provides a direct pathway to understanding and constructing artificial general intelligence.
