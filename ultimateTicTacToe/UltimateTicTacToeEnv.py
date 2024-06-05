@@ -7,13 +7,15 @@ class UltimateTicTacToeEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
-        super().__init__()  # Correct superclass initialization
-        # Define action space and observation space
+        super().__init__()  # Ensure proper superclass initialization
         self.action_space = spaces.Discrete(81)  # 81 possible actions, one for each cell in the 9x9 grid
+        self.observation_space = spaces.Box(low=-1, high=1, shape=(9, 9), dtype=int)  # Define observation space
+        
+        # Initialize state variables
         self.board = np.zeros((9, 9), dtype=int)  # 9x9 grid
-        self.sub_boards_won = np.zeros(9, dtype=int)
+        self.sub_boards_won = np.zeros(9, dtype=int)  # Track wins on each sub-board
         self.current_player = 1  # Player 1 starts
-        self.last_move = None  # Last move made, a value between 0 and 80
+        self.last_move = None  # Store the last move
 
     def step(self, action):
         reward = 0
@@ -38,7 +40,7 @@ class UltimateTicTacToeEnv(gym.Env):
         global_done = self.check_global_win()
         if global_done:
             reward += 5
-            return reward, global_done
+            return self.board.copy(), reward, global_done, {}
         # Switch player
         self.current_player = -self.current_player
         # Perform random action from the opponent
@@ -52,11 +54,11 @@ class UltimateTicTacToeEnv(gym.Env):
         global_done = self.check_global_win()
         if global_done:
             reward += -5
-            return reward, global_done
+            return self.board.copy(), reward, global_done, {}
         # Switch player again
         self.current_player = -self.current_player
 
-        return reward, global_done
+        return self.board.copy(), reward, global_done, {}
 
     def reset(self):
         self.board = np.zeros((9, 9), dtype=int)
