@@ -23,7 +23,12 @@ class DQNAgent:
         model.compile(loss='mse', optimizer='adam')
         return model
 
-    def choose_action(self, state, available_actions):
+    def choose_action(self, state, available_actions, testing=False):
+        if testing:
+            q_values = self.model.predict(state, verbose=0)
+            filtered_q_values = np.where(available_actions == 1, q_values, -np.inf)
+            best_actions = np.argmax(filtered_q_values, axis=1)
+            return best_actions
         if np.random.rand() < self.exploration_rate:
             selected_indices = np.full(available_actions.shape[0], -1, dtype=int)
             one_indices = available_actions == 1
@@ -35,14 +40,37 @@ class DQNAgent:
             return selected_indices
         else:
             q_values = self.model.predict(state, verbose=0)
-            return [np.argmax(q_values[i]+available_actions[i]*100000) for i in range(len(available_actions))]
+            filtered_q_values = np.where(available_actions == 1, q_values, -np.inf)
+            best_actions = np.argmax(filtered_q_values, axis=1)
+            return best_actions
             
-    def update_q_values(self, state, action, reward, next_state):
-        targets = reward + self.discount_factor * np.max(self.model.predict(next_state, verbose=0), axis=1)
+    def update_q_values(self, state, action, reward, next_state, dones, action_mask):
+        # Convert dones to a binary indicator (0 for done, 1 for not done)
+        dones = (~dones).astype(int)
+        
+        # Predict Q-values for the next state
+        next_state_q_values = self.model.predict(next_state, verbose=0)
+        q_values = self.model.predict(state, verbose=0)
+        filtered_q_values = np.where(action_mask == 1, q_values, -np.inf)
+        
+        # Calculate the maximum Q-value for the next state considering only valid actions
+        max_next_q_values = np.max(filtered_q_values, axis=1)
+        
+        # Compute the target Q-value
+        targets = reward + self.discount_factor * dones * max_next_q_values
+        
+        # Predict the current Q-values
         current_q_values = self.model.predict(state, verbose=0)
+        
+        # Update the Q-values with the target values only for the taken actions
         for i in range(len(action)):
             current_q_values[i][action[i]] = targets[i]
+        
+        # Fit the model to the updated Q-values
         self.model.fit(state, current_q_values, epochs=1, verbose=0)
 
     def decay_exploration_rate(self):
         self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * self.exploration_decay)
+
+    def set_exploration_rate(self, new_exploration_rate):
+        self.exploration_rate = new_exploration_rate

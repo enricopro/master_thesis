@@ -120,14 +120,14 @@ class UltimateTicTacToeEnvSelfPlay(gym.Env):
         ending_index = starting_index + 9
         if self.sub_boards_won[previous_cell] != 0: # the board has been won
             for i in range(len(flatten_board)):
-                if self.sub_boards_won[i % 9] != 0:
+                if self.sub_boards_won[math.floor(i / 9)] != 0:
                     continue
                 if flatten_board[i] == 0:
                     valid_actions[i] = 1
             return valid_actions
         if (flatten_board[starting_index:ending_index] != 0).all(): # the board is full
             for i in range(len(flatten_board)):
-                if self.sub_boards_won[i % 9] != 0:
+                if self.sub_boards_won[math.floor(i / 9)] != 0:
                     continue
                 if flatten_board[i] == 0:
                     valid_actions[i] = 1
