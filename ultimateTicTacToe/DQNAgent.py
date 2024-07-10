@@ -17,8 +17,8 @@ class DQNAgent:
     def build_model(self):
         model = Sequential()
         model.add(Flatten(input_shape=self.state_space_shape))
-        model.add(Dense(64, activation='relu'))
-        model.add(Dense(64, activation='relu'))
+        model.add(Dense(128, activation='relu'))
+        model.add(Dense(128, activation='relu'))
         model.add(Dense(self.action_space_size, activation='linear'))
         model.compile(loss='mse', optimizer='adam')
         return model
