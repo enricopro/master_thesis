@@ -42,11 +42,13 @@ class A2CAgent:
         actor_loss = -log_prob * td_error
         return actor_loss
 
-    def train(self, state, action, reward, next_state, done):
+    def train(self, state, action, reward, next_state, done, available_actions):
         
         with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
 
             p = self.actor(state, training=True)  # Output shape: [n_games, n_actions]
+            p = tf.multiply(p, available_actions)
+            p = p / tf.reduce_sum(p, axis=1, keepdims=True)
             
             prob = tf.gather_nd(p, tf.concat([tf.range(tf.shape(action)[0])[:, tf.newaxis], action[:, tf.newaxis]], axis=1))
                        
