@@ -1,8 +1,9 @@
 import tensorflow as tf
 import numpy as np
+from scipy.stats import truncnorm
 
 class A2CAgent:
-    def __init__(self, state_dim, action_dim, actor_lr=0.001, critic_lr=0.001):
+    def __init__(self, state_dim, action_dim, actor_lr=0.0001, critic_lr=0.001):
         self.state_dim = state_dim
         self.action_dim = action_dim
         
@@ -24,17 +25,40 @@ class A2CAgent:
         self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=actor_lr)
         self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=critic_lr)
 
+    def add_noise(self, probs):
+        # # Calculate the standard normal distribution bounds
+        # a, b = (0 - 0.001) / 0.000001, (np.inf - 0.001) / 0.000001
+
+        # # Generate Truncated Gaussian noise
+        # noise = truncnorm.rvs(a, b, loc=0.001, scale=0.000001, size=probs.shape)
+
+        # # Add noise to probabilities
+        # noisy_probabilities = probs + noise
+
+        # # Ensure probabilities remain valid
+        # noisy_probabilities = np.clip(noisy_probabilities, 0, 1)
+
+        # # Normalize to ensure they sum to 1
+        # noisy_probabilities /= noisy_probabilities.sum()
+
+        noisy_probabilities = probs + 0.0000001
+        noisy_probabilities /= tf.reduce_sum(noisy_probabilities, axis=1, keepdims=True)
+
+        return noisy_probabilities
+
     def act(self, state, available_moves):
         probs = self.actor(state)
+        probs = self.add_noise(probs)
         probs = tf.multiply(probs, available_moves)
 
         # Normalize probabilities
         probs = probs / tf.reduce_sum(probs, axis=1, keepdims=True)
-        # Sample action from probability distribution
+
         actions = []
         for i in range(len(probs)):
             action = np.random.choice(self.action_dim, p=np.squeeze(probs[i]))
             actions.append(action)
+            
         return np.array(actions)
 
     def compute_loss(self, prob, td_error):
@@ -47,6 +71,7 @@ class A2CAgent:
         with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
 
             p = self.actor(state, training=True)  # Output shape: [n_games, n_actions]
+            p = self.add_noise(p)
             p = tf.multiply(p, available_actions)
             p = p / tf.reduce_sum(p, axis=1, keepdims=True)
             
@@ -69,3 +94,4 @@ class A2CAgent:
         
         grads2 = tape2.gradient(critic_loss, self.critic.trainable_variables)
         self.critic_optimizer.apply_gradients(zip(grads2, self.critic.trainable_variables))
+

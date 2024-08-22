@@ -1,15 +1,13 @@
-import gym
-from gym import spaces
 import numpy as np
 import math
 
-class UltimateTicTacToeEnvSelfPlay(gym.Env):
+class UltimateTicTacToeEnvSelfPlay:
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
-        super().__init__()  # Ensure proper superclass initialization
-        self.action_space = spaces.Discrete(81)  # 81 possible actions, one for each cell in the 9x9 grid
-        self.observation_space = spaces.Box(low=-1, high=1, shape=(9, 9), dtype=int)  # Define observation space
+        # Define action and observation space
+        self.action_space = 81  # 81 possible actions, one for each cell in the 9x9 grid
+        self.observation_space = (9, 9)  # Define observation space as a 9x9 grid
         
         # Initialize state variables
         self.board = np.zeros((9, 9), dtype=int)  # 9x9 grid
@@ -20,7 +18,7 @@ class UltimateTicTacToeEnvSelfPlay(gym.Env):
     def step(self, action):
         reward = 0
         # Check if the action is valid
-        if action < 0 or action > 80:
+        if action < 0 or action >= self.action_space:
             raise ValueError(f"Invalid action {action}")
         # Check if the action is valid
         valid_actions = self.get_valid_actions()
@@ -35,7 +33,7 @@ class UltimateTicTacToeEnvSelfPlay(gym.Env):
         done = self.check_win(board_index)
         global_done = False
         if done:
-            reward += 0 # we can adjust the reward as needed
+            reward += 0  # we can adjust the reward as needed
             self.sub_boards_won[board_index] = self.current_player
             # Check if the global board is won
             global_done = self.check_global_win()
@@ -55,7 +53,7 @@ class UltimateTicTacToeEnvSelfPlay(gym.Env):
 
     def reset(self):
         self.board = np.zeros((9, 9), dtype=int)
-        self.current_player = -self.current_player # TODO I'm not sure about it
+        self.current_player = -self.current_player  # Switch starting player
         self.sub_boards_won = np.zeros(9, dtype=int)
         self.last_move = None
 
@@ -64,14 +62,14 @@ class UltimateTicTacToeEnvSelfPlay(gym.Env):
         for h in range(3):
             for k in range(3):
                 for i in range(3):
-                    if i/3 != 0:
+                    if i / 3 != 0:
                         board_string += "|"
                     for j in range(3):
-                        if self.board[h*3+i][k*3+j] == 0:
+                        if self.board[h * 3 + i][k * 3 + j] == 0:
                             board_string += " "
-                        if self.board[h*3+i][k*3+j] == 1:
+                        if self.board[h * 3 + i][k * 3 + j] == 1:
                             board_string += "X"
-                        if self.board[h*3+i][k*3+j] == -1:
+                        if self.board[h * 3 + i][k * 3 + j] == -1:
                             board_string += "O"
                 board_string += "\n"
             board_string += "-+-+-+-+-+-\n"
@@ -85,7 +83,7 @@ class UltimateTicTacToeEnvSelfPlay(gym.Env):
                 return True
         if (board[0, 0] == self.current_player and board[1, 1] == self.current_player and board[2, 2] == self.current_player) or \
               (board[0, 2] == self.current_player and board[1, 1] == self.current_player and board[2, 0] == self.current_player):
-                return True
+            return True
         return False
 
     def check_global_win(self):
@@ -96,7 +94,7 @@ class UltimateTicTacToeEnvSelfPlay(gym.Env):
                 return True
         if (global_board[0, 0] == self.current_player and global_board[1, 1] == self.current_player and global_board[2, 2] == self.current_player) or \
               (global_board[0, 2] == self.current_player and global_board[1, 1] == self.current_player and global_board[2, 0] == self.current_player):
-                return True
+            return True
         return False
 
     def take_random_action(self):
@@ -118,14 +116,14 @@ class UltimateTicTacToeEnvSelfPlay(gym.Env):
         previous_cell = self.last_move % 9
         starting_index = previous_cell * 9
         ending_index = starting_index + 9
-        if self.sub_boards_won[previous_cell] != 0: # the board has been won
+        if self.sub_boards_won[previous_cell] != 0:  # the board has been won
             for i in range(len(flatten_board)):
                 if self.sub_boards_won[math.floor(i / 9)] != 0:
                     continue
                 if flatten_board[i] == 0:
                     valid_actions[i] = 1
             return valid_actions
-        if (flatten_board[starting_index:ending_index] != 0).all(): # the board is full
+        if (flatten_board[starting_index:ending_index] != 0).all():  # the board is full
             for i in range(len(flatten_board)):
                 if self.sub_boards_won[math.floor(i / 9)] != 0:
                     continue
@@ -136,8 +134,18 @@ class UltimateTicTacToeEnvSelfPlay(gym.Env):
         for i in range(starting_index, ending_index):
             if flatten_board[i] == 0:
                 valid_actions[i] = 1
-        
+
         return valid_actions
 
     def to_state(self):
-        return self.board.flatten()*self.current_player, self.get_valid_actions()
+        return self.board.flatten() * self.current_player, self.get_valid_actions()
+
+    def clone(self):
+        # Create a deep copy of the environment
+        clone_env = UltimateTicTacToeEnvSelfPlay()
+        clone_env.board = np.copy(self.board)
+        clone_env.sub_boards_won = np.copy(self.sub_boards_won)
+        clone_env.current_player = self.current_player
+        clone_env.last_move = self.last_move
+        return clone_env
+

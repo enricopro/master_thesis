@@ -5,7 +5,7 @@ from keras.layers import Flatten
 from tensorflow.keras.optimizers import Adam
 
 class DQNAgent:
-    def __init__(self, action_space_size, state_space_shape, learning_rate=0.001, discount_factor=0.99, exploration_rate=1.0, exploration_decay=0.99, min_exploration_rate=0.01):
+    def __init__(self, action_space_size, state_space_shape, learning_rate=0.0001, discount_factor=0.99, exploration_rate=1.0, exploration_decay=0.99, min_exploration_rate=0.01):
         self.action_space_size = action_space_size
         self.state_space_shape = state_space_shape
         self.learning_rate = learning_rate
@@ -33,11 +33,16 @@ class DQNAgent:
         if np.random.rand() < self.exploration_rate:
             selected_indices = np.full(available_actions.shape[0], -1, dtype=int)
             one_indices = available_actions == 1
-            # For each row where there is at least one '1', select a random index of '1'
-            for i in range(available_actions.shape[0]):
-                valid_indices = np.where(one_indices[i])[0]
-                if valid_indices.size > 0:
-                    selected_indices[i] = np.random.choice(valid_indices)
+
+            # Get the indices of ones for each row
+            indices = np.where(one_indices)
+
+            # Split the indices array into a list of arrays, one for each row
+            split_indices = np.split(indices[1], np.cumsum(np.bincount(indices[0])[:-1]))
+
+            # Select a random index from each row's valid indices
+            selected_indices = np.array([np.random.choice(idx) if len(idx) > 0 else -1 for idx in split_indices])
+
             return selected_indices
         else:
             q_values = self.model.predict(state, verbose=0)
@@ -51,6 +56,7 @@ class DQNAgent:
         
         # Predict Q-values for the next state
         next_state_q_values = self.model.predict(next_state, verbose=0)
+
         # q_values = self.model.predict(state, verbose=0)
         filtered_q_values = np.where(action_mask == 1, next_state_q_values, -np.inf)
         
@@ -64,8 +70,7 @@ class DQNAgent:
         current_q_values = self.model.predict(state, verbose=0)
         
         # Update the Q-values with the target values only for the taken actions
-        for i in range(len(action)):
-            current_q_values[i][action[i]] = targets[i]
+        current_q_values[np.arange(len(action)), action] = targets
         
         # Fit the model to the updated Q-values
         self.model.fit(state, current_q_values, epochs=1, batch_size=state.shape[0], verbose=0)
@@ -75,3 +80,4 @@ class DQNAgent:
 
     def set_exploration_rate(self, new_exploration_rate):
         self.exploration_rate = new_exploration_rate
+

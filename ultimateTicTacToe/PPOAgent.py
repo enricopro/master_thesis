@@ -1,15 +1,15 @@
 import tensorflow as tf
 import numpy as np
+from scipy.stats import truncnorm
 
 class PPOAgent:
-    def __init__(self, state_dim, action_dim, actor_lr=0.0003, critic_lr=0.001, clip_epsilon=0.2, epochs=10, gamma=0.99, lambd=0.95):
+    def __init__(self, state_dim, action_dim, actor_lr=0.00005, critic_lr=0.001, clip_epsilon=0.2, gamma=0.99, lambda_=0.95):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.clip_epsilon = clip_epsilon
-        self.epochs = epochs
         self.gamma = gamma
-        self.lambd = lambd
-
+        self.lambda_ = lambda_
+        
         # Actor Network
         self.actor = tf.keras.models.Sequential([
             tf.keras.layers.Dense(128, activation='relu', input_shape=state_dim),
@@ -28,52 +28,92 @@ class PPOAgent:
         self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=actor_lr)
         self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=critic_lr)
 
-    def act(self, state, available_moves):
-        probs = self.actor(state)
-        probs = tf.multiply(probs, available_moves)
+    def add_noise(self, probs):
+        # # Calculate the standard normal distribution bounds
+        # a, b = (0 - 0.001) / 0.000001, (np.inf - 0.001) / 0.000001
 
-        # Normalize probabilities
-        probs = probs / tf.reduce_sum(probs, axis=1, keepdims=True)
-        # Sample action from probability distribution
-        actions = []
-        for i in range(len(probs)):
-            action = np.random.choice(self.action_dim, p=np.squeeze(probs[i]))
-            actions.append(action)
+        # # Generate Truncated Gaussian noise
+        # noise = truncnorm.rvs(a, b, loc=0.001, scale=0.000001, size=probs.shape)
+
+        # # Add noise to probabilities
+        # noisy_probabilities = probs + noise
+
+        # # Ensure probabilities remain valid
+        # noisy_probabilities = np.clip(noisy_probabilities, 0, 1)
+
+        # # Normalize to ensure they sum to 1
+        # noisy_probabilities /= noisy_probabilities.sum()
+
+        noisy_probabilities = probs + 0.0000001
+        noisy_probabilities /= tf.reduce_sum(noisy_probabilities, axis=1, keepdims=True)
+
+        return noisy_probabilities
+
+    def act(self, state, available_moves):
+        try:    
+            probs = self.actor(state)
+            # probs = self.add_noise(probs)
+            probs = tf.multiply(probs, available_moves)
+            
+            # Normalize probabilities
+            probs = probs / tf.reduce_sum(probs, axis=1, keepdims=True)
+            
+            actions = []
+            for i in range(len(probs)):
+                action = np.random.choice(self.action_dim, p=np.squeeze(probs[i]))
+                actions.append(action)
+        except:
+            print("self.actor(state): ", self.actor(state)[i])
+            print("self.add_noise(probs): ", self.add_noise(self.actor(state))[i])
+            print("available_moves: ", available_moves[i])
+            print("tf.multiply(probs, available_moves): ", tf.multiply(self.add_noise(self.actor(state)), available_moves)[i])
+            print("probs / tf.reduce_sum(probs, axis=1, keepdims=True): ", (tf.multiply(self.add_noise(self.actor(state)), available_moves) / tf.reduce_sum(tf.multiply(self.add_noise(self.actor(state)), available_moves), axis=1, keepdims=True))[i])
+        
         return np.array(actions)
 
-    def compute_advantages(self, rewards, dones, values, next_values):
-        advantages = np.zeros_like(rewards)
-        last_adv = 0
-        for t in reversed(range(len(rewards))):
-            delta = rewards[t] + self.gamma * next_values[t] * (1 - dones[t]) - values[t]
-            advantages[t] = last_adv = delta + self.gamma * self.lambd * (1 - dones[t]) * last_adv
-        returns = advantages + values
-        return advantages, returns
+    def train(self, state, action, reward, next_state, done, available_actions):
+        state = tf.convert_to_tensor(state, dtype=tf.float32)
+        next_state = tf.convert_to_tensor(next_state, dtype=tf.float32)
+        reward = tf.convert_to_tensor(reward, dtype=tf.float32)
+        done = tf.convert_to_tensor(done, dtype=tf.float32)
+        action = tf.convert_to_tensor(action, dtype=tf.int32)
 
-    def train(self, states, actions, rewards, next_states, dones):
-        values = self.critic(states)
-        next_values = self.critic(next_states)
-        advantages, returns = self.compute_advantages(rewards, dones, values, next_values)
+        old_probs = self.actor(state)
+        # old_probs = self.add_noise(old_probs)
+        old_probs = tf.multiply(old_probs, available_actions)
+        old_probs = old_probs / tf.reduce_sum(old_probs, axis=1, keepdims=True)
+        old_prob = tf.gather_nd(old_probs, tf.stack([tf.range(action.shape[0]), action], axis=1))
 
-        old_probs = self.actor(states)
-        old_probs = tf.gather_nd(old_probs, tf.concat([tf.range(tf.shape(actions)[0])[:, tf.newaxis], actions[:, tf.newaxis]], axis=1))
+        with tf.GradientTape() as tape2: # critic
+            v = self.critic(state, training=True)
+            vn = self.critic(next_state, training=True)
+            vn = tf.stop_gradient(vn)
+            td_target = reward + (1 - done) * self.gamma * vn
+            critic_loss = tf.reduce_mean(tf.square(td_target - tf.squeeze(v)))
 
-        for _ in range(self.epochs):
-            with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
-                probs = self.actor(states)
-                probs = tf.gather_nd(probs, tf.concat([tf.range(tf.shape(actions)[0])[:, tf.newaxis], actions[:, tf.newaxis]], axis=1))
-                
-                ratios = probs / (old_probs + 1e-10)
-                clipped_ratios = tf.clip_by_value(ratios, 1 - self.clip_epsilon, 1 + self.clip_epsilon)
-                
-                actor_loss = -tf.reduce_mean(tf.minimum(ratios * advantages, clipped_ratios * advantages))
+        grads2 = tape2.gradient(critic_loss, self.critic.trainable_variables)
+        self.critic_optimizer.apply_gradients(zip(grads2, self.critic.trainable_variables))
 
-                values = self.critic(states)
-                critic_loss = tf.keras.losses.mean_squared_error(returns, tf.squeeze(values))
-                critic_loss = tf.reduce_mean(critic_loss)
 
-            actor_grads = tape1.gradient(actor_loss, self.actor.trainable_variables)
-            self.actor_optimizer.apply_gradients(zip(actor_grads, self.actor.trainable_variables))
+        v = self.critic(state, training=True)
+        vn = self.critic(next_state, training=True)
+
+        advantages = reward + self.gamma * vn * (1 - done) - v
+        for _ in range(10):
+            with tf.GradientTape() as tape1: # actor
+
+                new_probs = self.actor(state, training=True)
+                # new_probs = self.add_noise(new_probs)
+                new_probs = tf.multiply(new_probs, available_actions)
+                new_probs = new_probs / tf.reduce_sum(new_probs, axis=1, keepdims=True)
+                new_prob = tf.gather_nd(new_probs, tf.stack([tf.range(action.shape[0]), action], axis=1))
+
+                ratio = new_prob / (old_prob + 1e-10) # to avoid division by zero
+                clipped_ratio = tf.clip_by_value(ratio, 1.0 - self.clip_epsilon, 1.0 + self.clip_epsilon)
+                surrogate_loss_1 = ratio * advantages
+                surrogate_loss_2 = clipped_ratio * advantages
+                actor_loss = -tf.reduce_mean(tf.minimum(surrogate_loss_1, surrogate_loss_2))
+
+            grads1 = tape1.gradient(actor_loss, self.actor.trainable_variables)
+            self.actor_optimizer.apply_gradients(zip(grads1, self.actor.trainable_variables))
             
-            critic_grads = tape2.gradient(critic_loss, self.critic.trainable_variables)
-            self.critic_optimizer.apply_gradients(zip(critic_grads, self.critic.trainable_variables))
