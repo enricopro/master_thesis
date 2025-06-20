@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ultimate Tic-Tac-Toe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 10px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        #game-container {
+            margin: 10px;
+            position: relative;
+            width: 100%;
+            max-width: min(90vw, 90vh);
+            aspect-ratio: 1;
+        }
+
+        .global-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: min(2vw, 10px);
+            background-color: #333;
+            padding: min(2vw, 10px);
+            border-radius: 5px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sub-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: min(0.5vw, 2px);
+            background-color: #666;
+            padding: min(0.5vw, 2px);
+            aspect-ratio: 1;
+        }
+
+        .cell {
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(12px, 3vw, 20px);
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            aspect-ratio: 1;
+            border-radius: 2px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 30px;
+            touch-action: manipulation;
+        }
+
+        .cell:hover {
+            background-color: #e0e0e0;
+        }
+
+        .cell:active {
+            background-color: #d0d0d0;
+            transform: scale(0.95);
+        }
+
+        .valid-move {
+            background-color: #90EE90;
+        }
+
+        .valid-move:hover {
+            background-color: #7DE67D;
+        }
+
+        .opponent-valid-move {
+            background-color: #FFCCCB;
+        }
+
+        .opponent-valid-move:hover {
+            background-color: #FFB3B3;
+        }
+
+        .won-board {
+            position: relative;
+        }
+
+        .won-board::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(24px, 8vw, 48px);
+            color: white;
+            font-weight: bold;
+            border-radius: 2px;
+        }
+
+        .won-board.player-x::after {
+            content: 'X';
+        }
+
+        .won-board.player-o::after {
+            content: 'O';
+        }
+
+        #status {
+            margin: 15px 10px;
+            font-size: clamp(16px, 4vw, 24px);
+            font-weight: bold;
+            text-align: center;
+            min-height: 1.5em;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: clamp(14px, 3vw, 16px);
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:active {
+            background-color: #3d8b40;
+            transform: scale(0.98);
+        }
+
+        .game-over-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            cursor: not-allowed;
+            border-radius: 5px;
+        }
+
+        .game-over .game-over-overlay {
+            display: flex;
+        }
+
+        .game-result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 300px;
+            width: 90%;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .game-result-title {
+            font-size: clamp(24px, 6vw, 36px);
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .victory {
+            color: #4CAF50;
+        }
+
+        .defeat {
+            color: #f44336;
+        }
+
+        .draw {
+            color: #ff9800;
+        }
+
+        .game-result-message {
+            font-size: clamp(16px, 4vw, 20px);
+            margin-bottom: 25px;
+            color: #666;
+        }
+
+        .restart-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-size: clamp(16px, 4vw, 18px);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            min-height: 50px;
+            touch-action: manipulation;
+        }
+
+        .restart-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .restart-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Mobile adjustments for the result card */
+        @media (max-width: 480px) {
+            .game-result-card {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .restart-button {
+                padding: 12px 25px;
+                min-height: 44px;
+            }
+        }
+
+        .game-over .cell {
+            cursor: not-allowed;
+        }
+
+        .game-over .cell:hover {
+            background-color: white;
+        }
+
+        .game-over .cell:active {
+            transform: none;
+        }
+
+        .game-over .valid-move {
+            background-color: white;
+        }
+
+        #model-selector {
+            margin: 15px 10px;
+            padding: 12px;
+            font-size: clamp(14px, 3vw, 16px);
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: white;
+            max-width: 300px;
+            width: 90%;
+            min-height: 44px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 10px;
+        }
+
+        /* Larger screens */
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+
+            #game-container {
+                max-width: min(60vw, 60vh);
+                margin: 20px;
+            }
+
+            .controls {
+                flex-direction: row;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            #status {
+                margin: 20px;
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 320px) {
+            .global-board {
+                gap: 1vw;
+                padding: 1vw;
+            }
+
+            .sub-board {
+                gap: 0.3vw;
+                padding: 0.3vw;
+            }
+
+            .cell {
+                font-size: 10px;
+                min-height: 25px;
+            }
+
+            .won-board::after {
+                font-size: 20px;
+            }
+        }
+
+        /* Landscape orientation on mobile */
+        @media (orientation: landscape) and (max-height: 500px) {
+            body {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: flex-start;
+                padding: 5px;
+            }
+
+            h1 {
+                width: 100%;
+                margin: 5px 0;
+                font-size: 1.5rem;
+            }
+
+            #game-container {
+                max-width: min(50vw, 80vh);
+                margin: 5px;
+            }
+
+            .controls {
+                display: flex;
+                flex-direction: column;
+                margin-left: 20px;
+                align-items: flex-start;
+            }
+
+            #status {
+                margin: 10px 0;
+                font-size: 16px;
+            }
+
+            #model-selector {
+                margin: 10px 0;
+                max-width: 200px;
+            }
+
+            button {
+                margin: 5px 0;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+    <!-- Load TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+</head>
+<body>
+    <h1>Ultimate Tic-Tac-Toe</h1>
+    <div class="controls">
+        <div id="status">Your turn (X)</div>
+        <select id="model-selector">
+            <option value="random">Random Agent</option>
+            <option value="DQN">DQN</option>
+            <option value="DDQN">DDQN</option>
+            <option value="DDQN_res_data_aug">DDQN ResNet + Augmentation</option>
+            <option value="DDQN_data_augmentation_2mln">DDQN ResNet + Augmentation + 2mln</option>
+            <option value="A2C">A2C</option>
+            <option value="PPO">PPO</option>
+        </select>
+        <button onclick="resetGame()">Reset Game</button>
+    </div>
+    <div id="game-container">
+        <div class="game-over-overlay">
+            <div class="game-result-card">
+                <div class="game-result-title" id="result-title">Victory!</div>
+                <div class="game-result-message" id="result-message">Congratulations! You won the game!</div>
+                <button class="restart-button" onclick="resetGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class UltimateTicTacToe {
+            constructor() {
+                this.board = Array(9).fill().map(() => Array(9).fill(0));
+                this.subBoardsWon = Array(9).fill(0);
+                this.currentPlayer = 1;
+                this.lastMove = null;
+                this.gameOver = false;
+            }
+
+            getValidActions() {
+                const validActions = Array(81).fill(0);
+                
+                if (this.lastMove === null) {
+                    return Array(81).fill(1);
+                }
+
+                const previousCell = this.lastMove % 9;
+                const startingIndex = previousCell * 9;
+                const endingIndex = startingIndex + 9;
+
+                // If the target board is won or full, allow moves in any non-won board
+                if (this.subBoardsWon[previousCell] !== 0 || 
+                    !this.board[previousCell].includes(0)) {
+                    for (let i = 0; i < 81; i++) {
+                        const boardIndex = Math.floor(i / 9);
+                        if (this.subBoardsWon[boardIndex] === 0 && 
+                            this.board[boardIndex][i % 9] === 0) {
+                            validActions[i] = 1;
+                        }
+                    }
+                    return validActions;
+                }
+
+                // Only allow moves in the target board
+                for (let i = startingIndex; i < endingIndex; i++) {
+                    if (this.board[previousCell][i % 9] === 0) {
+                        validActions[i] = 1;
+                    }
+                }
+
+                return validActions;
+            }
+
+            checkWin(boardIndex) {
+                const board = this.board[boardIndex];
+                const lines = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                    [0, 4, 8], [2, 4, 6] // diagonals
+                ];
+
+                return lines.some(line => 
+                    board[line[0]] !== 0 && 
+                    board[line[0]] === board[line[1]] && 
+                    board[line[1]] === board[line[2]]
+                );
+            }
+
+            checkGlobalWin() {
+                const lines = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                    [0, 4, 8], [2, 4, 6]
+                ];
+
+                return lines.some(line =>
+                    this.subBoardsWon[line[0]] !== 0 &&
+                    this.subBoardsWon[line[0]] === this.subBoardsWon[line[1]] &&
+                    this.subBoardsWon[line[1]] === this.subBoardsWon[line[2]]
+                );
+            }
+
+            isDraw() {
+                // Check if all sub-boards are either won or full
+                for (let i = 0; i < 9; i++) {
+                    if (this.subBoardsWon[i] === 0 && this.board[i].includes(0)) {
+                        return false; // Still moves available
+                    }
+                }
+                return !this.checkGlobalWin(); // It's a draw if no global win
+            }
+
+            makeMove(action) {
+                const boardIndex = Math.floor(action / 9);
+                const cellIndex = action % 9;
+
+                if (this.board[boardIndex][cellIndex] !== 0) return false;
+
+                const validActions = this.getValidActions();
+                if (validActions[action] !== 1) return false;
+
+                this.board[boardIndex][cellIndex] = this.currentPlayer;
+                this.lastMove = action;
+
+                if (this.checkWin(boardIndex)) {
+                    this.subBoardsWon[boardIndex] = this.currentPlayer;
+                    if (this.checkGlobalWin()) {
+                        this.gameOver = true;
+                        return true;
+                    }
+                }
+
+                // Check for draw after making the move
+                if (this.isDraw()) {
+                    this.gameOver = true;
+                    return true;
+                }
+
+                this.currentPlayer *= -1;
+                return true;
+            }
+
+            randomMove() {
+                const validActions = this.getValidActions();
+                const validIndices = validActions.reduce((acc, val, idx) => {
+                    if (val === 1) acc.push(idx);
+                    return acc;
+                }, []);
+
+                if (validIndices.length === 0) return null;
+                return validIndices[Math.floor(Math.random() * validIndices.length)];
+            }
+        }
+
+        let game = new UltimateTicTacToe();
+        let model = null;
+
+        // Function to get the model's move
+        async function loadModel(modelName) {
+            if (modelName === "random") {
+                model = null;
+                return;
+            }
+
+            let modelPath;
+            if (modelName === "A2C" || modelName === "PPO") {
+                modelPath = `./models/${modelName}_js/actor/model.json`;
+            } else {
+                modelPath = `./models/${modelName}_js/model.json`;
+            }
+
+            try {
+                // Load model
+                if (modelName == "DDQN_res_data_aug" || modelName == "DDQN_data_augmentation_2mln") {
+                  model = await tf.loadLayersModel(modelPath)
+                } else {
+                  model = await tf.loadGraphModel(modelPath);
+                }
+
+                console.log(`${modelName} model loaded successfully.`);
+                console.log('Model input signature:', model.inputs);
+                console.log('Model output signature:', model.outputs);
+
+                // Warm up the model with a dummy prediction
+                const dummyInput = tf.zeros([1, 81]);
+                const prediction = await model.predict(dummyInput);
+                console.log('Prediction raw:', prediction);
+                console.log('Prediction shape:', prediction.shape);
+                console.log('Prediction data:', await prediction.data());
+
+                dummyInput.dispose();
+                prediction.dispose();
+                
+            } catch (error) {
+                console.error(`Error loading ${modelName} model:`, error);
+                console.log('Model path:', modelPath);
+                console.log('Full error:', error.message);
+                model = null;
+            }
+        }
+
+        async function getModelMove() {
+            if (!model) return game.randomMove();
+
+            try {
+                const boardArray = game.board.flat();
+                const state = tf.tensor2d([boardArray], [1, 81]);
+                const validActions = game.getValidActions();
+                const validActionsTensor = tf.tensor2d([validActions], [1, 81]);
+
+                let action;
+                switch (document.getElementById('model-selector').value) {
+                    case "DQN":
+                    case "DDQN_res_data_aug":
+                    case "DDQN_data_augmentation_2mln":
+                    case "DDQN":
+                        // Get Q-values and mask invalid actions with very negative values
+                        const qValues = await model.predict(state);
+                        const maskedQValues = qValues.mul(validActionsTensor).add(
+                            validActionsTensor.mul(-1).add(1).mul(1e9).mul(-1)
+                        );
+
+                        // Print Q-values and filtered Q-values
+                        console.log("Q-values:", qValues.dataSync());
+                        console.log("Filtered Q-values:", maskedQValues.dataSync());
+
+                        const bestAction = maskedQValues.argMax(1);
+                        action = bestAction.dataSync()[0];
+                        console.log("Final action taken (DQN/DDQN):", action);
+
+                        // Dispose tensors
+                        qValues.dispose();
+                        maskedQValues.dispose();
+                        bestAction.dispose();
+                        break;
+
+                    case "A2C":
+                    case "PPO":
+                        // Get action probabilities and mask invalid actions
+                        const probs = await model.predict(state);
+                        const maskedProbs = probs.mul(validActionsTensor);
+                        const normalizedProbs = maskedProbs.div(maskedProbs.sum(1, true));
+
+                        // Print action probabilities and filtered probabilities
+                        console.log("Action probabilities:", probs.dataSync());
+                        console.log("Filtered probabilities:", maskedProbs.dataSync());
+                        console.log("Normalized probabilities:", normalizedProbs.dataSync());
+
+                        const logProbs = normalizedProbs.log();
+                        const sampledAction = tf.multinomial(logProbs, 1).squeeze();
+                        action = sampledAction.dataSync()[0];
+                        console.log("Final action taken (A2C/PPO):", action);
+
+                        // Dispose tensors
+                        probs.dispose();
+                        maskedProbs.dispose();
+                        normalizedProbs.dispose();
+                        logProbs.dispose();
+                        sampledAction.dispose();
+                        break;
+                }
+                return action;
+            } catch (error) {
+                console.error("Error in getModelMove:", error);
+                return game.randomMove();
+            }
+        }
+
+        // Helper function to select valid action with highest value
+        function selectActionFromValid(values, validActions) {
+            let bestAction = -1;
+            let bestValue = -Infinity;
+            
+            console.log('Number of valid actions:', validActions.filter(x => x === 1).length);
+            
+            for (let i = 0; i < 81; i++) {
+                if (validActions[i] === 1) {
+                    if (values[i] > bestValue) {
+                        bestAction = i;
+                        bestValue = values[i];
+                    }
+                }
+            }
+            
+            if (bestAction === -1) {
+                console.warn('No valid action found, using random move');
+                return game.randomMove();
+            }
+            
+            return bestAction;
+        }
+
+        // Helper function to sample action based on probabilities
+        function sampleActionFromValid(probs, validActions) {
+            const validProbs = [];
+            const validIndices = [];
+            
+            // Filter valid actions
+            for (let i = 0; i < 81; i++) {
+                if (validActions[i] === 1) {
+                    validProbs.push(probs[i]);
+                    validIndices.push(i);
+                }
+            }
+
+            if (validIndices.length === 0) {
+                console.warn('No valid actions found for sampling');
+                return game.randomMove();
+            }
+
+            // Normalize probabilities
+            const sum = validProbs.reduce((a, b) => a + b, 0);
+            const normalizedProbs = validProbs.map(p => p / sum);
+
+            // Sample action
+            const rand = Math.random();
+            let cumSum = 0;
+            
+            for (let i = 0; i < normalizedProbs.length; i++) {
+                cumSum += normalizedProbs[i];
+                if (rand < cumSum) {
+                    return validIndices[i];
+                }
+            }
+
+            // Fallback to last valid action if sampling fails
+            return validIndices[validIndices.length - 1];
+        }
+
+        // Create the game board
+        function createBoard() {
+            const container = document.getElementById('game-container');
+            const globalBoard = document.createElement('div');
+            globalBoard.className = 'global-board';
+
+            for (let i = 0; i < 9; i++) {
+                const subBoard = document.createElement('div');
+                subBoard.className = 'sub-board';
+                
+                for (let j = 0; j < 9; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    const globalIndex = i * 9 + j;
+                    cell.setAttribute('data-index', globalIndex);
+                    cell.addEventListener('click', () => handleMove(globalIndex));
+                    subBoard.appendChild(cell);
+                }
+
+                globalBoard.appendChild(subBoard);
+            }
+
+            // Clear container but keep the overlay
+            const overlay = container.querySelector('.game-over-overlay');
+            container.innerHTML = '';
+            container.appendChild(overlay);
+            container.appendChild(globalBoard);
+        }
+
+        // Update the game board
+        function updateBoard() {
+            const validActions = game.getValidActions();
+            const cells = document.getElementsByClassName('cell');
+            const container = document.getElementById('game-container');
+
+            // Update game-over class on container
+            if (game.gameOver) {
+                container.classList.add('game-over');
+                showGameResult();
+            } else {
+                container.classList.remove('game-over');
+            }
+
+            for (let i = 0; i < 81; i++) {
+                const boardIndex = Math.floor(i / 9);
+                const cellIndex = i % 9;
+                const value = game.board[boardIndex][cellIndex];
+                
+                cells[i].textContent = value === 1 ? 'X' : value === -1 ? 'O' : '';
+                if (game.currentPlayer === 1) {
+                    cells[i].className = 'cell' + (validActions[i] === 1 && !game.gameOver ? ' valid-move' : '');
+                } else {
+                    cells[i].className = 'cell' + (validActions[i] === 1 && !game.gameOver ? ' opponent-valid-move' : '');
+                }
+            }
+
+            const subBoards = document.getElementsByClassName('sub-board');
+            for (let i = 0; i < 9; i++) {
+                subBoards[i].className = 'sub-board' + 
+                    (game.subBoardsWon[i] === 1 ? ' won-board player-x' : 
+                     game.subBoardsWon[i] === -1 ? ' won-board player-o' : '');
+            }
+
+            const status = document.getElementById('status');
+            if (game.gameOver) {
+                if (game.isDraw()) {
+                    status.textContent = "Game Over! It's a draw!";
+                } else {
+                    status.textContent = `Game Over! ${game.currentPlayer === 1 ? 'X' : 'O'} wins!`;
+                }
+            } else {
+                status.textContent = `${game.currentPlayer === 1 ? 'Your turn (X)' : 'Computer thinking... (O)'}`;
+            }
+        }
+
+        // Show game result overlay
+        function showGameResult() {
+            const resultTitle = document.getElementById('result-title');
+            const resultMessage = document.getElementById('result-message');
+            
+            if (game.isDraw()) {
+                resultTitle.textContent = 'Draw!';
+                resultTitle.className = 'game-result-title draw';
+                resultMessage.textContent = "It's a tie! Well played by both sides.";
+            } else if (game.currentPlayer === 1) {
+                // Player X wins (current player switched after winning move)
+                resultTitle.textContent = 'Victory!';
+                resultTitle.className = 'game-result-title victory';
+                resultMessage.textContent = 'Congratulations! You defeated the AI!';
+            } else {
+                // Player O (computer) wins
+                resultTitle.textContent = 'Defeat!';
+                resultTitle.className = 'game-result-title defeat';
+                resultMessage.textContent = 'The AI won this time. Try again!';
+            }
+        }
+
+        // Handle player move
+        async function handleMove(index) {
+            if (game.gameOver || game.currentPlayer !== 1) return;
+
+            if (game.makeMove(index)) {
+                updateBoard();
+                
+                if (!game.gameOver) {
+                    // Add slight delay for computer move
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    const computerMove = await getModelMove();
+                    if (computerMove !== null) {
+                        game.makeMove(computerMove);
+                        updateBoard();
+                    }
+                }
+            }
+        }
+
+        // Reset the game
+        function resetGame() {
+            game = new UltimateTicTacToe();
+            updateBoard();
+        }
+
+        // Initialize the game
+        createBoard();
+        updateBoard();
+
+        // Load the selected model when the dropdown changes
+        document.getElementById('model-selector').addEventListener('change', async (event) => {
+            const selectedModel = event.target.value;
+            await loadModel(selectedModel);
+        });
+    </script>
+</body>
+</html>
