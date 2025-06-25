@@ -25,6 +25,111 @@
             text-align: center;
         }
 
+        /* Rules section */
+        .rules-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .rules-toggle {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: clamp(14px, 3vw, 16px);
+            cursor: pointer;
+            margin-bottom: 15px;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+
+        .rules-toggle:hover {
+            background: #45a049;
+        }
+
+        .rules-content {
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .rules-content.show {
+            display: block;
+        }
+
+        .rules-content h3 {
+            color: #333;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: clamp(16px, 3.5vw, 18px);
+        }
+
+        .rules-content p, .rules-content li {
+            color: #666;
+            line-height: 1.6;
+            font-size: clamp(14px, 3vw, 16px);
+            margin-bottom: 8px;
+        }
+
+        .rules-content ul {
+            padding-left: 20px;
+        }
+
+        .rules-highlight {
+            background: #e8f5e8;
+            padding: 10px;
+            border-left: 4px solid #4CAF50;
+            margin: 10px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 1000px;
+            }
+        }
+
+        /* Credits section */
+        .credits {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+            font-size: clamp(12px, 2.5vw, 14px);
+            color: #666;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .github-logo {
+            width: 20px;
+            height: 20px;
+            fill: #333;
+        }
+
+        .credits a {
+            color: #333;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .credits a:hover {
+            color: #4CAF50;
+        }
+
         #game-container {
             margin: 10px;
             position: relative;
@@ -260,6 +365,11 @@
                 padding: 12px 25px;
                 min-height: 44px;
             }
+
+            .rules-container {
+                padding: 15px;
+                margin: 5px;
+            }
         }
 
         .game-over .cell {
@@ -340,6 +450,16 @@
             .won-board::after {
                 font-size: 20px;
             }
+
+            .credits {
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+
+            .github-logo {
+                width: 16px;
+                height: 16px;
+            }
         }
 
         /* Landscape orientation on mobile */
@@ -384,6 +504,17 @@
                 margin: 5px 0;
                 padding: 8px 16px;
             }
+
+            .rules-container {
+                display: none;
+            }
+
+            .credits {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                font-size: 11px;
+            }
         }
     </style>
     <!-- Load TensorFlow.js -->
@@ -391,6 +522,13 @@
 </head>
 <body>
     <h1>Ultimate Tic-Tac-Toe</h1>
+    <div class="credits">
+        <span>Made by</span>
+        <svg class="github-logo" viewBox="0 0 24 24">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        <a href="https://github.com/enricopro/master_thesis/tree/main/ultimateTicTacToe/webapp_demo" target="_blank">Enrico D'Alberton</a>
+    </div>
     <div class="controls">
         <div id="status">Your turn (X)</div>
         <select id="model-selector">
