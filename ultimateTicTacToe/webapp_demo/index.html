@@ -515,6 +515,35 @@
                 right: 10px;
                 font-size: 11px;
             }
+
+            .language-switcher {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            .language-switcher button {
+                font-size: 20px;
+                padding: 5px 10px;
+                cursor: pointer;
+                background: none;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }
+
+            .language-switcher button:hover {
+                background-color: #f0f0f0;
+            }
+
+            #language-toggle {
+                font-size: 20px;
+                padding: 5px 10px;
+                border: none;
+                background: none;
+                cursor: pointer;
+                margin-bottom: 10px;
+            }
+
         }
     </style>
     <!-- Load TensorFlow.js -->
@@ -533,25 +562,50 @@
     <div style="text-align: center; margin-bottom: 10px;">
         <button class="rules-toggle" onclick="toggleRules()">Show/Hide Rules</button>
     </div>
-  
+     
     <div class="rules-container" id="rulesContent" style="display: none;">
+  
+        <button id="language-toggle" onclick="toggleLanguage()">🇮🇹</button>
+
         <div class="rules-content">
+        
+        <!-- ENGLISH -->
+        <div class="rules-lang" id="rules-en">
             <h3>Ultimate Tic Tac Toe - Rules</h3>
             <ul>
-                <li>Players take turns as X and O. The first move can be anywhere.</li>
-                <li>The position you play in a local 3x3 board determines the local board your opponent must play in next.</li>
-                <li>Example: play center cell → opponent goes to center board.</li>
-                <li>If that target board is already won or full, the opponent can play anywhere.</li>
-                <li>Winning a local board happens as in regular Tic Tac Toe (3 in a line).</li>
-                <li>You win the game by winning 3 local boards in a line on the global grid.</li>
-                <li>If all local boards are filled without a global winner, the game is a draw.</li>
+            <li>Players take turns as X and O. The first move can be anywhere.</li>
+            <li>The position you play in a local 3x3 board determines the local board your opponent must play in on the global board.</li>
+            <li>Example: play center cell → opponent goes to center board.</li>
+            <li>If that target board is already won or full, the opponent can play anywhere.</li>
+            <li>Winning a local board happens as in regular Tic Tac Toe (3 in a line).</li>
+            <li>You win the game by winning 3 local boards in a line on the global grid.</li>
+            <li>If all local boards are filled without a global winner, the game is a draw.</li>
             </ul>
             <div class="rules-highlight">
-                🧠 Think local. Think global. Don’t send your opponent somewhere spicy!
+            🧠 Think local. Think global. Don’t send your opponent somewhere spicy!
             </div>
         </div>
-    </div>    
-    <div class="controls">
+    
+        <!-- ITALIAN -->
+        <div class="rules-lang" id="rules-it" style="display: none;">
+            <h3>Ultimate Tic Tac Toe - Regole</h3>
+            <ul>
+            <li>I giocatori si alternano nei turni come X e O. Il primo può giocare ovunque.</li>
+            <li>La cella che scegli in una griglia locale determina la griglia in cui l’avversario dovrà giocare nel prossimo turno.</li>
+            <li>Esempio: giochi al centro → l’avversario va nella griglia centrale.</li>
+            <li>Se quella griglia è già vinta o piena, l’avversario può scegliere liberamente.</li>
+            <li>Per vincere una griglia locale, servono 3 simboli in fila come nel tris classico.</li>
+            <li>Si vince la partita completando 3 griglie locali in fila nella griglia globale.</li>
+            <li>Se tutte le griglie locali sono piene e nessuno ha vinto, è pareggio.</li>
+            </ul>
+            <div class="rules-highlight">
+            🧠 Pensa localmente. Pensa globalmente. Non mandare l’avversario in un posto pericoloso!
+            </div>
+        </div>
+    
+        </div>
+    </div>
+        <div class="controls">
         <div id="status">Your turn (X)</div>
         <select id="model-selector">
             <option value="DDQN_data_augmentation_2mln">DDQN ResNet + Augmentation + 2mln (Elo: 1861.4)</option>
@@ -575,6 +629,26 @@
     </div>
 
     <script>
+        let currentLang = 'en';
+
+        function toggleLanguage() {
+            const btn = document.getElementById('language-toggle');
+            const en = document.getElementById('rules-en');
+            const it = document.getElementById('rules-it');
+
+            if (currentLang === 'en') {
+                en.style.display = 'none';
+                it.style.display = 'block';
+                btn.textContent = '🇬🇧';
+                currentLang = 'it';
+            } else {
+                en.style.display = 'block';
+                it.style.display = 'none';
+                btn.textContent = '🇮🇹';
+                currentLang = 'en';
+            }
+        }
+
         function toggleRules() {
             const container = document.getElementById("rulesContent");
             if (!container) return;
