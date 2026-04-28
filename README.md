@@ -1,6 +1,6 @@
-# Ultimate Tic Tac Toe - Master Thesis Project
+# Ultimate Tic Tac Toe
 
-This repository contains the code and resources developed for my Master’s Thesis on **Ultimate Tic Tac Toe (UTTT)**, a complex extension of the classic Tic Tac Toe game. The project explores the application of **Reinforcement Learning (RL)** techniques to UTTT, leveraging its unique combination of local and global strategic dynamics as an ideal testbed for evaluating modern RL algorithms in large, structured action and state spaces.
+This repository contains the code and resources developed for the project on **Ultimate Tic Tac Toe (UTTT)**, a complex extension of the classic Tic Tac Toe game. The project explores the application of **Reinforcement Learning (RL)** techniques to UTTT, leveraging its unique combination of local and global strategic dynamics as an ideal testbed for evaluating modern RL algorithms in large, structured action and state spaces.
 
 After introducing the theoretical foundations of reinforcement learning, game theory, and algorithmic strategy, the study focuses on the design, training, and evaluation of several RL agents, including:
 
